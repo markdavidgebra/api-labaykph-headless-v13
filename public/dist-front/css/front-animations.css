@@ -1,0 +1,51 @@
+/**
+ * Elegant scroll animations for all frontend pages
+ * Uses WOW.js + Animate.css
+ */
+
+/* WOW.js visibility */
+.wow {
+    visibility: hidden;
+}
+
+/* Hover lift effect for cards and interactive elements */
+.animate-hover {
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                box-shadow 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.animate-hover:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+.destination-card.animate-hover:hover,
+.package-card.animate-hover:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+}
+.blog-card.animate-hover:hover,
+.team-card.animate-hover:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+}
+.testimonial-elegant-card.animate-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.2);
+}
+.contact-form-card.animate-hover,
+.addresses-card.animate-hover,
+.terms-content-card.animate-hover,
+.privacy-content-card.animate-hover,
+.faq-accordion-wrapper.animate-hover {
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+.contact-form-card.animate-hover:hover,
+.addresses-card.animate-hover:hover,
+.terms-content-card.animate-hover:hover,
+.privacy-content-card.animate-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
+}
+.gallery-item.animate-hover:hover,
+.video-item.animate-hover:hover {
+    transform: scale(1.02);
+}
