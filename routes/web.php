@@ -30,6 +30,10 @@ use App\Http\Controllers\Front\FrontController;
 
 use App\Http\Controllers\User\UserController;
 
+Route::get('/', function () {
+    return response('OK', 200);
+});
+
 
 // Pages
 Route::get('/',[FrontController::class,'home'])->name('home');
