@@ -20,9 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'user.auth' => \App\Http\Middleware\User::class,
             'api.admin' => \App\Http\Middleware\ApiAdmin::class,
         ]);
-        $middleware->api(prepend: [
-            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-        ]);
+        // Token-based API auth (Bearer); no cookie/CSRF session flow for the PWA.
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
