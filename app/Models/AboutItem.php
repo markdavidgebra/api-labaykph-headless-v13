@@ -9,5 +9,7 @@ class AboutItem extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['id', 'feature_status'];
+    protected $fillable = [
+        'feature_status',
+    ];
 }

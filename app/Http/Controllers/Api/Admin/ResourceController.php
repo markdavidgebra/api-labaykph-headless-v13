@@ -40,6 +40,7 @@ use App\Models\SuperAdmin;
 use App\Models\Wishlist;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class ResourceController extends Controller
 {
@@ -675,8 +676,26 @@ class ResourceController extends Controller
 
         $model = $map[$key];
         $item = $model::where('id', 1)->firstOrFail();
-        $item->fill($request->except(['_token', 'photo', 'logo', 'favicon']));
-        $this->handleUpload($request, $item, ['photo', 'logo', 'favicon']);
+        $item->fill($request->except([
+            '_token',
+            'id',
+            'created_at',
+            'updated_at',
+            'photo',
+            'logo',
+            'favicon',
+            'banner',
+            'testimonial_background',
+            'cta_background',
+        ]));
+        $this->handleUpload($request, $item, [
+            'photo',
+            'logo',
+            'favicon',
+            'banner',
+            'testimonial_background',
+            'cta_background',
+        ]);
         $item->save();
 
         return response()->json(['success' => true, 'item' => $item]);
@@ -697,6 +716,22 @@ class ResourceController extends Controller
 
     private function prepareData(Request $request, string $resource, $existing = null): array
     {
+        if ($resource === 'subscribers') {
+            $email = strtolower(trim((string) $request->input('email', '')));
+            $request->merge(['email' => $email]);
+            $request->validate([
+                'email' => [
+                    'required',
+                    'email',
+                    'max:255',
+                    Rule::unique('subscribers', 'email')->ignore($existing?->id),
+                ],
+                'status' => 'nullable|string|in:Active,Pending,Inactive',
+            ], [
+                'email.unique' => 'This email is already subscribed.',
+            ]);
+        }
+
         $uploadFields = ['photo', 'logo', 'favicon', 'featured_photo', 'banner'];
         $data = $request->except(array_merge(['_token', 'confirm_password'], $uploadFields));
 
@@ -723,6 +758,14 @@ class ResourceController extends Controller
 
         if ($resource === 'packages' && array_key_exists('sold_out', $data)) {
             $data['sold_out'] = filter_var($data['sold_out'], FILTER_VALIDATE_BOOLEAN);
+        }
+
+        if ($resource === 'packages') {
+            foreach (['price', 'old_price'] as $priceField) {
+                if (array_key_exists($priceField, $data) && ($data[$priceField] === '' || $data[$priceField] === null)) {
+                    $data[$priceField] = null;
+                }
+            }
         }
 
         $model = $existing ?? new ($this->resolveModel($resource));

@@ -268,21 +268,26 @@ class PublicController extends Controller
 
     public function subscriberSubmit(Request $request)
     {
+        $email = strtolower(trim((string) $request->input('email', '')));
+        $request->merge(['email' => $email]);
+
         $request->validate([
             'email' => 'required|email|unique:subscribers,email',
+        ], [
+            'email.unique' => 'This email is already subscribed.',
         ]);
 
         $token = hash('sha256', time());
         Subscriber::create([
-            'email' => $request->email,
+            'email' => $email,
             'token' => $token,
             'status' => 'Pending',
         ]);
 
-        $verificationLink = url('/subscriber_verify/'.$request->email.'/'.$token);
+        $verificationLink = url('/subscriber_verify/'.$email.'/'.$token);
         $subject = 'Subscriber Verification';
         $message = 'Please click the following link to verify your email address as subscriber:<br><a href="'.$verificationLink.'">Verify Email</a>';
-        \Mail::to($request->email)->send(new Websitemail($subject, $message));
+        \Mail::to($email)->send(new Websitemail($subject, $message));
 
         return response()->json(['success' => true, 'message' => 'You are subscribed successfully. Please check your email to confirm the verification link.']);
     }

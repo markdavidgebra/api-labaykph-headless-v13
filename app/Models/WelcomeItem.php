@@ -9,5 +9,13 @@ class WelcomeItem extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['id', 'heading', 'description', 'button_text', 'button_link', 'photo', 'video', 'status'];
+    protected $fillable = [
+        'heading',
+        'description',
+        'button_text',
+        'button_link',
+        'photo',
+        'video',
+        'status',
+    ];
 }

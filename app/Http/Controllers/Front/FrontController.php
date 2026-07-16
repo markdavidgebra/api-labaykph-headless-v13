@@ -142,24 +142,29 @@ class FrontController extends Controller
 
     public function subscriber_submit(Request $request)
     {
+        $email = strtolower(trim((string) $request->input('email', '')));
+        $request->merge(['email' => $email]);
+
         $request->validate([
             'email' => 'required|email|unique:subscribers,email',
+        ], [
+            'email.unique' => 'This email is already subscribed.',
         ]);
 
         $token = hash('sha256',time());
 
         $obj = new Subscriber;
-        $obj->email = $request->email;
+        $obj->email = $email;
         $obj->token = $token;
         $obj->status = 'Pending';
         $obj->save();
 
-        $verification_link = route('subscriber_verify',['email'=>$request->email,'token'=>$token]);
+        $verification_link = route('subscriber_verify',['email'=>$email,'token'=>$token]);
 
         $subject = 'Subscriber Verification';
         $message = 'Please click the following link to verify your email address as subscriber:<br><a href="'.$verification_link.'">Verify Email</a>';
 
-        \Mail::to($request->email)->send(new Websitemail($subject,$message));
+        \Mail::to($email)->send(new Websitemail($subject,$message));
 
         return redirect()->back()->with('success', 'You are subscribed successfully. Please check your email to confirm the verification link.');
     }

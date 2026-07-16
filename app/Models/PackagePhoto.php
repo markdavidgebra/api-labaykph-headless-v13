@@ -9,6 +9,11 @@ class PackagePhoto extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'package_id',
+        'photo',
+    ];
+
     public function package()
     {
         return $this->belongsTo(Package::class);

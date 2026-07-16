@@ -41,7 +41,7 @@ class AdminPackageController extends Controller
             'name' => 'required|unique:packages',
             'slug' => 'required|alpha_dash|unique:packages',
             'description' => 'required',
-            'price' => 'required|numeric',
+            'price' => 'nullable|numeric',
             'old_price' => 'nullable|numeric',
             'featured_photo' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'banner' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
@@ -60,7 +60,7 @@ class AdminPackageController extends Controller
         $obj->name = $request->name;
         $obj->slug = $request->slug;
         $obj->description = $request->description;
-        $obj->price = $request->price;
+        $obj->price = $request->filled('price') ? $request->price : null;
         $obj->old_price = $request->filled('old_price') ? $request->old_price : null;
         $obj->map = $request->map;
         $obj->total_rating = 0;
@@ -86,7 +86,7 @@ class AdminPackageController extends Controller
             'name' => 'required|unique:packages,name,'.$id,
             'slug' => 'required|alpha_dash|unique:packages,slug,'.$id,
             'description' => 'required',
-            'price' => 'required|numeric',
+            'price' => 'nullable|numeric',
             'old_price' => 'nullable|numeric',
         ]);
 
@@ -122,7 +122,7 @@ class AdminPackageController extends Controller
         $package->name = $request->name;
         $package->slug = $request->slug;
         $package->description = $request->description;
-        $package->price = $request->price;
+        $package->price = $request->filled('price') ? $request->price : null;
         $package->old_price = $request->filled('old_price') ? $request->old_price : null;
         $package->map = $request->map;
         $package->sold_out = $request->boolean('sold_out');

@@ -9,6 +9,11 @@ class DestinationPhoto extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'destination_id',
+        'photo',
+    ];
+
     public function destination()
     {
         return $this->belongsTo(Destination::class);

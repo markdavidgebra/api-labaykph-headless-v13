@@ -9,6 +9,11 @@ class PackageVideo extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'package_id',
+        'video',
+    ];
+
     /**
      * Get the YouTube video ID for embedding (handles full URLs or raw IDs).
      */
