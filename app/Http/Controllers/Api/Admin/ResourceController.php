@@ -96,6 +96,9 @@ class ResourceController extends Controller
                 $query->where('status', $status);
             }
         }
+        if ($resource === 'reviews') {
+            Review::whereNull('admin_viewed_at')->update(['admin_viewed_at' => now()]);
+        }
 
         if ($resource === 'packages' && $request->query('sort') === 'name') {
             $query->orderBy('name');

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Destination;
+use App\Models\Inquiry;
 use App\Models\Message;
 use App\Models\MessageComment;
 use App\Models\Package;
@@ -82,6 +83,13 @@ class DashboardController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function markInquiryViewed()
+    {
+        Inquiry::whereNull('admin_viewed_at')->update(['admin_viewed_at' => now()]);
+
+        return response()->json(['success' => true]);
+    }
+
     private function notificationCounts(): array
     {
         $unviewedMessages = 0;
@@ -107,6 +115,7 @@ class DashboardController extends Controller
             })->count(),
             'unviewed_messages' => $unviewedMessages,
             'unviewed_subscribers' => Subscriber::whereNull('admin_viewed_at')->count(),
+            'unviewed_inquiries' => Inquiry::whereNull('admin_viewed_at')->count(),
         ];
     }
 }

@@ -76,6 +76,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/notifications/bookings/viewed', [AdminDashboardController::class, 'markBookingViewed']);
             Route::post('/notifications/users/viewed', [AdminDashboardController::class, 'markUserViewed']);
             Route::post('/notifications/reviews/viewed', [AdminDashboardController::class, 'markReviewViewed']);
+            Route::post('/notifications/inquiries/viewed', [AdminDashboardController::class, 'markInquiryViewed']);
 
             Route::get('/bookings', [AdminResourceController::class, 'bookings']);
             Route::get('/messages', [AdminResourceController::class, 'messages']);
