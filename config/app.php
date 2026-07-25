@@ -64,8 +64,24 @@ return [
     |
     */
 
-    // Public website for email links. Prefer FRONTEND_URL; do not point this at api.*.
-    'frontend_url' => rtrim(env('FRONTEND_URL', 'https://labaykph.com'), '/'),
+    // Public website for email links (verification, password reset). Never use the API host.
+    'frontend_url' => (static function () {
+        $url = rtrim((string) env('FRONTEND_URL', 'https://labaykph.com'), '/');
+        if ($url === '') {
+            return 'https://labaykph.com';
+        }
+
+        $host = parse_url($url, PHP_URL_HOST) ?: '';
+
+        // If FRONTEND_URL was mistakenly set to api.labaykph.com, use the website host.
+        if ($host !== '' && preg_match('/^api\./i', $host)) {
+            $host = preg_replace('/^api\./i', '', $host) ?: 'labaykph.com';
+
+            return 'https://'.$host;
+        }
+
+        return $url;
+    })(),
 
     /*
     |--------------------------------------------------------------------------

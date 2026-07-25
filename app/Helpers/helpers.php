@@ -102,48 +102,43 @@ if (!function_exists('with_upload_urls')) {
 if (!function_exists('frontend_base_url')) {
     /**
      * Resolve the public website base URL (never the API host).
+     *
+     * Do not use APP_URL here — on production it is often https://api.labaykph.com.
+     * Prefer config() over env() so this still works after `php artisan config:cache`.
      */
     function frontend_base_url(): string
     {
+        $fallback = 'https://labaykph.com';
+
         $candidates = [
-            env('FRONTEND_URL'),
             config('app.frontend_url'),
-            config('app.url'),
+            // env() is null after config:cache; kept only for local/uncached runs.
+            env('FRONTEND_URL'),
         ];
 
-        $base = '';
         foreach ($candidates as $candidate) {
             $candidate = trim((string) $candidate);
-            if ($candidate !== '') {
-                $base = $candidate;
-                break;
+            if ($candidate === '') {
+                continue;
             }
+
+            $host = parse_url($candidate, PHP_URL_HOST);
+            if (!is_string($host) || $host === '') {
+                continue;
+            }
+
+            // api.labaykph.com → https://labaykph.com (email links must open the website)
+            if (preg_match('/^api\./i', $host)) {
+                $host = preg_replace('/^api\./i', '', $host) ?: 'labaykph.com';
+
+                return 'https://'.$host;
+            }
+
+            // Keep as-is so local ports (e.g. localhost:5173) are preserved.
+            return rtrim($candidate, '/');
         }
 
-        if ($base === '') {
-            $base = 'https://labaykph.com';
-        }
-
-        $parts = parse_url($base);
-        $scheme = $parts['scheme'] ?? 'https';
-        $host = $parts['host'] ?? '';
-
-        // Email links must open the website, not api.labaykph.com / api.* hosts.
-        if ($host !== '' && preg_match('/^api\./i', $host)) {
-            $host = preg_replace('/^api\./i', '', $host);
-        }
-
-        if ($host === '') {
-            $host = 'labaykph.com';
-            $scheme = 'https';
-        }
-
-        // Prefer https for the live site.
-        if (preg_match('/(^|\.)labaykph\.com$/i', $host)) {
-            $scheme = 'https';
-        }
-
-        return rtrim($scheme.'://'.$host, '/');
+        return $fallback;
     }
 }
 
