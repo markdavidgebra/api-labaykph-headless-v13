@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Mail\Websitemail;
 use App\Models\User;
+use App\Support\MailContent;
 use Hash;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -30,8 +31,7 @@ class AuthController extends Controller
 
         $verificationLink = url('/registration-verify/'.$request->email.'/'.$token);
         $subject = 'Verify your email — '.config('app.name');
-        $message = '<p>Hello <strong>'.e($request->name).'</strong>,</p>';
-        $message .= '<p>Please verify your email: <a href="'.$verificationLink.'">Verify my email</a></p>';
+        $message = MailContent::verification($request->name, $verificationLink);
         \Mail::to($request->email)->send(new Websitemail($subject, $message));
 
         return response()->json([
@@ -89,7 +89,9 @@ class AuthController extends Controller
         $user->save();
 
         $resetLink = url('/reset-password/'.$token.'/'.$request->email);
-        \Mail::to($request->email)->send(new Websitemail('Password Reset', "Reset your password: <a href='{$resetLink}'>Click Here</a>"));
+        $subject = 'Reset your password — '.config('app.name');
+        $message = MailContent::passwordReset($user->name ?? '', $resetLink);
+        \Mail::to($request->email)->send(new Websitemail($subject, $message));
 
         return response()->json(['success' => true, 'message' => 'We have sent a password reset link to your email.']);
     }

@@ -614,16 +614,7 @@ class FrontController extends Controller
         $verification_link = route('registration_verify',['email'=>$request->email,'token'=>$token]);
 
         $subject = 'Verify your email — '.config('app.name');
-        $message = '
-            <p style="margin: 0 0 20px 0;">Hello <strong>'.e($request->name).'</strong>,</p>
-            <p style="margin: 0 0 24px 0;">Thank you so much for creating an account with us — we truly appreciate you choosing to be part of our journey. To get started, please confirm your email address by clicking the button below.</p>
-            <p style="margin: 0 0 24px 0; text-align: center;">
-                <a href="'.$verification_link.'" style="display: inline-block; background-color: #1e3a5f; color: #ffffff !important; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 15px;">Verify my email</a>
-            </p>
-            <p style="margin: 0; color: #6b7280; font-size: 13px;">If the button doesn\'t work, copy and paste this link into your browser:</p>
-            <p style="margin: 8px 0 0 0;"><a href="'.$verification_link.'" style="color: #2d5a87; word-break: break-all;">'.$verification_link.'</a></p>
-            <p style="margin: 24px 0 0 0;">We\'re grateful for your trust and can\'t wait to welcome you.</p>
-        ';
+        $message = \App\Support\MailContent::verification($request->name, $verification_link);
 
         \Mail::to($request->email)->send(new Websitemail($subject,$message));
 
@@ -697,9 +688,8 @@ class FrontController extends Controller
         $user->update();
 
         $reset_link = route('reset_password',['token'=>$token,'email'=>$request->email]);
-        $subject = "Password Reset";
-        $message = "To reset password, please click on the link below:<br>";
-        $message .= "<a href='".$reset_link."'>Click Here</a>";
+        $subject = 'Reset your password — '.config('app.name');
+        $message = \App\Support\MailContent::passwordReset($user->name ?? '', $reset_link);
 
         \Mail::to($request->email)->send(new Websitemail($subject,$message));
 
