@@ -29,7 +29,7 @@ class AuthController extends Controller
             'token' => $token,
         ]);
 
-        $verificationLink = url('/registration-verify/'.$request->email.'/'.$token);
+        $verificationLink = frontend_url('registration-verify/'.rawurlencode($request->email).'/'.$token);
         $subject = 'Verify your email — '.config('app.name');
         $message = MailContent::verification($request->name, $verificationLink);
         \Mail::to($request->email)->send(new Websitemail($subject, $message));
@@ -37,6 +37,27 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Registration successful. Please check your email to verify your account.',
+        ]);
+    }
+
+    public function verifyRegistration(string $email, string $token)
+    {
+        $user = User::where('token', $token)->where('email', $email)->first();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This verification link is invalid or has already been used.',
+            ], 422);
+        }
+
+        $user->token = '';
+        $user->status = 1;
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Your email is verified. You can login now.',
         ]);
     }
 
@@ -88,7 +109,7 @@ class AuthController extends Controller
         $user->token = $token;
         $user->save();
 
-        $resetLink = url('/reset-password/'.$token.'/'.$request->email);
+        $resetLink = frontend_url('reset-password/'.$token.'/'.rawurlencode($request->email));
         $subject = 'Reset your password — '.config('app.name');
         $message = MailContent::passwordReset($user->name ?? '', $resetLink);
         \Mail::to($request->email)->send(new Websitemail($subject, $message));

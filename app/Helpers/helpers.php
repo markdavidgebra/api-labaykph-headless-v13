@@ -98,3 +98,16 @@ if (!function_exists('with_upload_urls')) {
         return $data;
     }
 }
+
+if (!function_exists('frontend_url')) {
+    /**
+     * Build an absolute URL on the public frontend (not the API host).
+     */
+    function frontend_url(string $path = ''): string
+    {
+        $base = rtrim((string) config('app.frontend_url', config('app.url')), '/');
+        $path = ltrim($path, '/');
+
+        return $path === '' ? $base : $base.'/'.$path;
+    }
+}

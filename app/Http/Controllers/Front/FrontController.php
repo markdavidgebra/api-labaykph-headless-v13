@@ -611,7 +611,7 @@ class FrontController extends Controller
         $user->token = $token;
         $user->save();
 
-        $verification_link = route('registration_verify',['email'=>$request->email,'token'=>$token]);
+        $verification_link = frontend_url('registration-verify/'.rawurlencode($request->email).'/'.$token);
 
         $subject = 'Verify your email — '.config('app.name');
         $message = \App\Support\MailContent::verification($request->name, $verification_link);
@@ -687,7 +687,7 @@ class FrontController extends Controller
         $user->token = $token;
         $user->update();
 
-        $reset_link = route('reset_password',['token'=>$token,'email'=>$request->email]);
+        $reset_link = frontend_url('reset-password/'.$token.'/'.rawurlencode($request->email));
         $subject = 'Reset your password — '.config('app.name');
         $message = \App\Support\MailContent::passwordReset($user->name ?? '', $reset_link);
 

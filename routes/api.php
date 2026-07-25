@@ -35,6 +35,7 @@ Route::prefix('v1')->group(function () {
     Route::post('/enquiries/{id}', [PublicController::class, 'enquirySubmit']);
 
     Route::post('/auth/register', [AuthController::class, 'register']);
+    Route::get('/auth/registration-verify/{email}/{token}', [AuthController::class, 'verifyRegistration']);
     Route::post('/auth/login', [AuthController::class, 'login']);
     Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
