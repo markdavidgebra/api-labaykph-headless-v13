@@ -101,44 +101,23 @@ if (!function_exists('with_upload_urls')) {
 
 if (!function_exists('frontend_base_url')) {
     /**
-     * Resolve the public website base URL (never the API host).
-     *
-     * Do not use APP_URL here — on production it is often https://api.labaykph.com.
-     * Prefer config() over env() so this still works after `php artisan config:cache`.
+     * Public website base URL for email links (never api.labaykph.com).
+     * Production always uses https://labaykph.com. Local may use FRONTEND_URL.
      */
     function frontend_base_url(): string
     {
-        $fallback = 'https://labaykph.com';
+        $production = 'https://labaykph.com';
 
-        $candidates = [
-            config('app.frontend_url'),
-            // env() is null after config:cache; kept only for local/uncached runs.
-            env('FRONTEND_URL'),
-        ];
+        if (function_exists('app') && app()->environment('local', 'testing')) {
+            $local = trim((string) (config('app.frontend_url') ?: env('FRONTEND_URL') ?: ''));
+            $host = is_string($local) ? (parse_url($local, PHP_URL_HOST) ?: '') : '';
 
-        foreach ($candidates as $candidate) {
-            $candidate = trim((string) $candidate);
-            if ($candidate === '') {
-                continue;
+            if ($local !== '' && $host !== '' && !preg_match('/^api\./i', $host)) {
+                return rtrim($local, '/');
             }
-
-            $host = parse_url($candidate, PHP_URL_HOST);
-            if (!is_string($host) || $host === '') {
-                continue;
-            }
-
-            // api.labaykph.com → https://labaykph.com (email links must open the website)
-            if (preg_match('/^api\./i', $host)) {
-                $host = preg_replace('/^api\./i', '', $host) ?: 'labaykph.com';
-
-                return 'https://'.$host;
-            }
-
-            // Keep as-is so local ports (e.g. localhost:5173) are preserved.
-            return rtrim($candidate, '/');
         }
 
-        return $fallback;
+        return $production;
     }
 }
 

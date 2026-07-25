@@ -602,19 +602,19 @@ class FrontController extends Controller
             'retype_password' => 'required|same:password',
         ]);
 
-        $token = hash('sha256',time());
-
         $user = new User();
         $user->name = $request->name;
         $user->email = $request->email;
         $user->password = bcrypt($request->password);
-        $user->token = $token;
+        $user->token = '';
+        $user->status = 1;
         $user->save();
 
-        $verification_link = frontend_url('registration-verify/'.rawurlencode($request->email).'/'.$token);
+        // Hardcoded public site login — do not use APP_URL / api.labaykph.com.
+        $login_link = 'https://labaykph.com/login';
 
-        $subject = 'Verify your email — '.config('app.name');
-        $message = \App\Support\MailContent::verification($request->name, $verification_link);
+        $subject = 'Welcome to '.config('app.name');
+        $message = \App\Support\MailContent::verification($request->name, $login_link);
 
         \Mail::to($request->email)->send(new Websitemail($subject,$message));
 

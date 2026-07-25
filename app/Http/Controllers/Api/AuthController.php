@@ -21,22 +21,23 @@ class AuthController extends Controller
             'retype_password' => 'required|same:password',
         ]);
 
-        $token = hash('sha256', time());
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => bcrypt($request->password),
-            'token' => $token,
+            'token' => '',
+            'status' => 1,
         ]);
 
-        $verificationLink = frontend_url('registration-verify/'.rawurlencode($request->email).'/'.$token);
-        $subject = 'Verify your email — '.config('app.name');
-        $message = MailContent::verification($request->name, $verificationLink);
+        // Hardcoded public site login — do not use APP_URL / api.labaykph.com.
+        $loginLink = 'https://labaykph.com/login';
+        $subject = 'Welcome to '.config('app.name');
+        $message = MailContent::verification($request->name, $loginLink);
         \Mail::to($request->email)->send(new Websitemail($subject, $message));
 
         return response()->json([
             'success' => true,
-            'message' => 'Registration successful. Please check your email to verify your account.',
+            'message' => 'Registration successful. You can login now.',
         ]);
     }
 
