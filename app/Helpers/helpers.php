@@ -99,13 +99,61 @@ if (!function_exists('with_upload_urls')) {
     }
 }
 
+if (!function_exists('frontend_base_url')) {
+    /**
+     * Resolve the public website base URL (never the API host).
+     */
+    function frontend_base_url(): string
+    {
+        $candidates = [
+            env('FRONTEND_URL'),
+            config('app.frontend_url'),
+            config('app.url'),
+        ];
+
+        $base = '';
+        foreach ($candidates as $candidate) {
+            $candidate = trim((string) $candidate);
+            if ($candidate !== '') {
+                $base = $candidate;
+                break;
+            }
+        }
+
+        if ($base === '') {
+            $base = 'https://labaykph.com';
+        }
+
+        $parts = parse_url($base);
+        $scheme = $parts['scheme'] ?? 'https';
+        $host = $parts['host'] ?? '';
+
+        // Email links must open the website, not api.labaykph.com / api.* hosts.
+        if ($host !== '' && preg_match('/^api\./i', $host)) {
+            $host = preg_replace('/^api\./i', '', $host);
+        }
+
+        if ($host === '') {
+            $host = 'labaykph.com';
+            $scheme = 'https';
+        }
+
+        // Prefer https for the live site.
+        if (preg_match('/(^|\.)labaykph\.com$/i', $host)) {
+            $scheme = 'https';
+        }
+
+        return rtrim($scheme.'://'.$host, '/');
+    }
+}
+
 if (!function_exists('frontend_url')) {
     /**
      * Build an absolute URL on the public frontend (not the API host).
      */
     function frontend_url(string $path = ''): string
     {
-        $base = rtrim((string) config('app.frontend_url', config('app.url')), '/');
+        $base = frontend_base_url();
         $path = ltrim($path, '/');
 
         return $path === '' ? $base : $base.'/'.$path;

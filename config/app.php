@@ -64,7 +64,8 @@ return [
     |
     */
 
-    'frontend_url' => rtrim(env('FRONTEND_URL', env('APP_URL', 'http://localhost')), '/'),
+    // Public website for email links. Prefer FRONTEND_URL; do not point this at api.*.
+    'frontend_url' => rtrim(env('FRONTEND_URL', 'https://labaykph.com'), '/'),
 
     /*
     |--------------------------------------------------------------------------
