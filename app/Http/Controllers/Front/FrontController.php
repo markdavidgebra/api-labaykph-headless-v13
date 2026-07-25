@@ -687,7 +687,8 @@ class FrontController extends Controller
         $user->token = $token;
         $user->update();
 
-        $reset_link = frontend_url('reset-password/'.$token.'/'.rawurlencode($request->email));
+        // Hardcoded public site — never APP_URL / api.labaykph.com.
+        $reset_link = 'https://labaykph.com/reset-password/'.$token.'/'.rawurlencode($request->email);
         $subject = 'Reset your password — '.config('app.name');
         $message = \App\Support\MailContent::passwordReset($user->name ?? '', $reset_link);
 

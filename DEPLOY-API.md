@@ -52,11 +52,26 @@ APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://api.labaykph.com
 
-FRONTEND_URL=https://test.labaykph.com
+# Website for email links (login / reset). NEVER use https://api.labaykph.com here.
+FRONTEND_URL=https://labaykph.com
 SANCTUM_STATEFUL_DOMAINS=test.labaykph.com,labaykph.com,www.labaykph.com
 ```
 
-When going live, change `FRONTEND_URL` to `https://labaykph.com`.
+## Update code on the live server (required after git push)
+
+Pushing to GitHub does **not** update `api.labaykph.com` by itself. On the server:
+
+```bash
+cd /path/to/labayk-api-headless-v13
+git pull origin main
+composer install --no-dev --optimize-autoloader
+php artisan config:clear
+php artisan cache:clear
+php artisan config:cache
+php artisan route:cache
+```
+
+After deploy, a new registration email must show **Go to login** and link to `https://labaykph.com/login` (not `api.labaykph.com`).
 
 ## Verify after deploy
 

@@ -117,7 +117,8 @@ class AuthController extends Controller
         $user->token = $token;
         $user->save();
 
-        $resetLink = frontend_url('reset-password/'.$token.'/'.rawurlencode($request->email));
+        // Hardcoded public site — never APP_URL / api.labaykph.com.
+        $resetLink = 'https://labaykph.com/reset-password/'.$token.'/'.rawurlencode($request->email);
         $subject = 'Reset your password — '.config('app.name');
         $message = MailContent::passwordReset($user->name ?? '', $resetLink);
         \Mail::to($request->email)->send(new Websitemail($subject, $message));
