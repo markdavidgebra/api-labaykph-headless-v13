@@ -21,23 +21,24 @@ class AuthController extends Controller
             'retype_password' => 'required|same:password',
         ]);
 
+        $token = hash('sha256', time());
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => bcrypt($request->password),
-            'token' => '',
-            'status' => 1,
+            'token' => $token,
+            'status' => 0, // pending until email link is clicked
         ]);
 
-        // Hardcoded public site login — do not use APP_URL / api.labaykph.com.
-        $loginLink = 'https://labaykph.com/login';
-        $subject = 'Welcome to '.config('app.name');
-        $message = MailContent::verification($request->name, $loginLink);
+        // Hardcoded public site — never APP_URL / api.labaykph.com.
+        $verificationLink = 'https://labaykph.com/registration-verify/'.rawurlencode($request->email).'/'.$token;
+        $subject = 'Verify your email — '.config('app.name');
+        $message = MailContent::verification($request->name, $verificationLink);
         \Mail::to($request->email)->send(new Websitemail($subject, $message));
 
         return response()->json([
             'success' => true,
-            'message' => 'Registration successful. You can login now.',
+            'message' => 'Registration successful. Please check your email to activate your account before logging in.',
         ]);
     }
 
@@ -76,11 +77,17 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        $user = User::where('email', $request->email)->where('status', 1)->first();
+        $user = User::where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
                 'email' => ['The information you entered is incorrect.'],
+            ]);
+        }
+
+        if ((int) $user->status !== 1) {
+            throw ValidationException::withMessages([
+                'email' => ['Please verify your email before logging in. Check your inbox for the activation link.'],
             ]);
         }
 

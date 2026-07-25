@@ -35,17 +35,17 @@ class MailContent
     public static function verification(string $name, string $url): string
     {
         return '
-            <p style="margin: 0 0 8px 0; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: #9e7102; font-weight: 700;">Welcome</p>
+            <p style="margin: 0 0 8px 0; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: #9e7102; font-weight: 700;">Email verification</p>
             <p style="margin: 0 0 18px 0; font-size: 22px; line-height: 1.35; color: #2a241c; font-family: Georgia, \'Times New Roman\', Times, serif;">
                 Hello '.e($name).',
             </p>
             <p style="margin: 0 0 12px 0; color: #4a4338;">
-                Thank you for joining <strong>'.e(config('app.name')).'</strong>. Your account is ready — start exploring our destinations and packages.
+                Thank you for joining <strong>'.e(config('app.name')).'</strong>. Please confirm your email address to activate your account and start exploring our destinations and packages.
             </p>
             <p style="margin: 0 0 8px 0; color: #4a4338;">
-                Click the button below to go to login:
+                Click the button below to verify your email:
             </p>
-            '.self::button($url, 'Go to login').'
+            '.self::button($url, 'Verify my email').'
             '.self::fallbackLink($url).'
             <p style="margin: 28px 0 0 0; color: #4a4338;">
                 We\'re glad you\'re here — travel with confidence.

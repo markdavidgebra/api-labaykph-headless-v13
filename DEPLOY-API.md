@@ -71,7 +71,9 @@ php artisan config:cache
 php artisan route:cache
 ```
 
-After deploy, a new registration email must show **Go to login** and link to `https://labaykph.com/login` (not `api.labaykph.com`).
+After deploy, a new registration email must show **Verify my email** and link to  
+`https://labaykph.com/registration-verify/{email}/{token}` (not `api.labaykph.com`).  
+New accounts stay **pending** (`status = 0`) until that link is clicked.
 
 ## Verify after deploy
 
