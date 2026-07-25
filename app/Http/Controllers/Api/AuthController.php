@@ -40,9 +40,16 @@ class AuthController extends Controller
         ]);
     }
 
-    public function verifyRegistration(string $email, string $token)
+    public function verifyRegistration(Request $request)
     {
-        $user = User::where('token', $token)->where('email', $email)->first();
+        $data = $request->validate([
+            'email' => 'required|email',
+            'token' => 'required|string',
+        ]);
+
+        $user = User::where('token', $data['token'])
+            ->where('email', $data['email'])
+            ->first();
 
         if (!$user) {
             return response()->json([
