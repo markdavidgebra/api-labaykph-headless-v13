@@ -116,6 +116,7 @@ class DashboardController extends Controller
             'unviewed_messages' => $unviewedMessages,
             'unviewed_subscribers' => Subscriber::whereNull('admin_viewed_at')->count(),
             'unviewed_inquiries' => Inquiry::whereNull('admin_viewed_at')->count(),
+            'pending_payments' => Booking::where('payment_status', 'Pending')->count(),
         ];
     }
 }

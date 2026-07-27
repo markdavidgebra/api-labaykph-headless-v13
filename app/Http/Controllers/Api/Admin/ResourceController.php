@@ -38,7 +38,11 @@ use App\Models\User;
 use App\Models\WelcomeItem;
 use App\Models\SuperAdmin;
 use App\Models\Wishlist;
+use App\Mail\Websitemail;
+use App\Support\MailContent;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -265,9 +269,55 @@ class ResourceController extends Controller
         return response()->json(['success' => true]);
     }
 
-    public function bookings()
+    public function bookings(Request $request)
     {
-        return response()->json(['bookings' => Booking::with(['user', 'package', 'tour'])->orderBy('id', 'desc')->paginate(20)]);
+        $query = Booking::with(['user', 'package', 'tour'])->orderBy('id', 'desc');
+
+        if ($status = trim((string) $request->query('status', ''))) {
+            $query->where('payment_status', $status);
+        }
+
+        if ($search = trim((string) $request->query('search', ''))) {
+            $like = '%'.$search.'%';
+            $looksLikeDate = (bool) preg_match(
+                '/\d{4}-\d{1,2}-\d{1,2}|\d{1,2}\/\d{1,2}\/\d{2,4}|[A-Za-z]{3,9}\s+\d{1,2}/',
+                $search
+            );
+
+            $query->where(function ($q) use ($search, $like, $looksLikeDate) {
+                $q->where('invoice_no', 'like', $like)
+                    ->orWhereHas('user', function ($userQuery) use ($like) {
+                        $userQuery->where('name', 'like', $like)
+                            ->orWhere('email', 'like', $like);
+                    })
+                    ->orWhereRaw("DATE_FORMAT(created_at, '%b %e, %Y') LIKE ?", [$like])
+                    ->orWhereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') LIKE ?", [$like])
+                    ->orWhereRaw("DATE_FORMAT(created_at, '%M %e, %Y') LIKE ?", [$like])
+                    ->orWhereRaw("DATE_FORMAT(created_at, '%m/%d/%Y') LIKE ?", [$like]);
+
+                // Avoid treating numeric reference nos (unix timestamps) as dates.
+                if ($looksLikeDate) {
+                    try {
+                        $parsed = \Carbon\Carbon::parse($search);
+                        $q->orWhereDate('created_at', $parsed->toDateString());
+                    } catch (\Throwable) {
+                        // Not a parseable date — reference/name search still applies.
+                    }
+                }
+            });
+        }
+
+        return response()->json([
+            'bookings' => $query->paginate(20),
+            'summary' => [
+                'total_amount' => (float) Booking::sum('paid_amount'),
+                'completed_amount' => (float) Booking::where('payment_status', 'Completed')->sum('paid_amount'),
+                'pending_amount' => (float) Booking::where('payment_status', 'Pending')->sum('paid_amount'),
+                'completed_count' => Booking::where('payment_status', 'Completed')->count(),
+                'pending_count' => Booking::where('payment_status', 'Pending')->count(),
+                'total_count' => Booking::count(),
+            ],
+        ]);
     }
 
     public function storeDestinationPhoto(Request $request, int $id)
@@ -487,9 +537,34 @@ class ResourceController extends Controller
 
     public function approveTourBooking(int $bookingId)
     {
-        Booking::findOrFail($bookingId)->update(['payment_status' => 'Completed']);
+        $booking = Booking::with(['user', 'package', 'tour'])->findOrFail($bookingId);
+        $booking->update(['payment_status' => 'Completed']);
 
-        return response()->json(['success' => true]);
+        $user = $booking->user;
+        if ($user?->email) {
+            try {
+                $bookingUrl = frontend_url('user/booking/'.$booking->invoice_no);
+                $subject = 'Payment approved — '.config('app.name');
+                $message = MailContent::paymentApproved(
+                    $user->name ?? '',
+                    $booking->package?->name ?? 'your package',
+                    (string) $booking->invoice_no,
+                    (float) $booking->paid_amount,
+                    $bookingUrl
+                );
+                Mail::to($user->email)->send(new Websitemail($subject, $message));
+            } catch (\Throwable $e) {
+                Log::warning('Failed to send payment approval email', [
+                    'booking_id' => $booking->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment approved. Client has been notified by email.',
+        ]);
     }
 
     public function tourInvoice(string $invoiceNo)
@@ -688,6 +763,7 @@ class ResourceController extends Controller
             'logo',
             'favicon',
             'banner',
+            'payment_qr',
             'testimonial_background',
             'cta_background',
         ]));
@@ -696,6 +772,7 @@ class ResourceController extends Controller
             'logo',
             'favicon',
             'banner',
+            'payment_qr',
             'testimonial_background',
             'cta_background',
         ]);

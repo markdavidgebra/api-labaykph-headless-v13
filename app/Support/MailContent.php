@@ -75,4 +75,43 @@ class MailContent
             </p>
         ';
     }
+
+    public static function paymentApproved(
+        string $name,
+        string $packageName,
+        string $referenceNo,
+        float $amount,
+        string $bookingUrl
+    ): string {
+        $greeting = $name !== '' ? 'Hello '.e($name).',' : 'Hello,';
+        $amountLabel = '₱'.number_format($amount, 0, '.', ',');
+
+        return '
+            <p style="margin: 0 0 8px 0; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: #9e7102; font-weight: 700;">Payment approved</p>
+            <p style="margin: 0 0 18px 0; font-size: 22px; line-height: 1.35; color: #2a241c; font-family: Georgia, \'Times New Roman\', Times, serif;">
+                '.$greeting.'
+            </p>
+            <p style="margin: 0 0 12px 0; color: #4a4338;">
+                Great news — your payment has been <strong>approved</strong> by our team.
+            </p>
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 0 0 18px 0; background-color: #faf7f0; border: 1px solid #eee4d2; border-radius: 10px;">
+                <tr>
+                    <td style="padding: 16px 18px; font-family: Arial, Helvetica, sans-serif; color: #4a4338; font-size: 14px; line-height: 1.65;">
+                        <div><strong>Package:</strong> '.e($packageName).'</div>
+                        <div><strong>Reference:</strong> '.e($referenceNo).'</div>
+                        <div><strong>Amount:</strong> '.e($amountLabel).'</div>
+                        <div><strong>Status:</strong> Completed</div>
+                    </td>
+                </tr>
+            </table>
+            <p style="margin: 0 0 8px 0; color: #4a4338;">
+                You can view your booking details anytime from your account:
+            </p>
+            '.self::button($bookingUrl, 'View my booking').'
+            '.self::fallbackLink($bookingUrl).'
+            <p style="margin: 28px 0 0 0; color: #4a4338;">
+                Thank you for choosing <strong>'.e(config('app.name')).'</strong>. We look forward to your journey.
+            </p>
+        ';
+    }
 }

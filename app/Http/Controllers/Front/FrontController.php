@@ -433,7 +433,7 @@ class FrontController extends Controller
                 return redirect()->route('stripe_cancel');
             }
         }
-        elseif($request->payment_method == 'Cash') 
+        elseif(in_array($request->payment_method, ['Cash', 'QR Code'], true))
         {
             $obj = new Booking;
             $obj->tour_id = $request->tour_id;
@@ -441,13 +441,12 @@ class FrontController extends Controller
             $obj->user_id = Auth::guard('web')->user()->id;
             $obj->total_person = $request->total_person;
             $obj->paid_amount = $request->ticket_price;
-            $obj->payment_method = "Cash";
+            $obj->payment_method = $request->payment_method;
             $obj->payment_status = "Pending";
             $obj->invoice_no = time();
             $obj->save();
 
-            // return redirect()->back()->with('success', 'Payment is pending and will be successful after admin approval!');
-            return redirect()->back()->with('success', 'Thank you for booking. Sales person will contact you soon!');
+            return redirect()->back()->with('success', 'Thank you for booking. Please pay via the QR code and our sales team will contact you soon!');
         }
     }
 

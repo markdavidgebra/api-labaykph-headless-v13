@@ -8,11 +8,11 @@ $setting = App\Models\Setting::where('id',1)->first();
     <div class="container">
         <div class="row">
             <div class="col-md-12">
-                <h2>Invoice: {{ $invoice_no }}</h2>
+                <h2>Booking: {{ $invoice_no }}</h2>
                 <div class="breadcrumb-container">
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
-                        <li class="breadcrumb-item active">Invoice: {{ $invoice_no }}</li>
+                        <li class="breadcrumb-item active">Booking: {{ $invoice_no }}</li>
                     </ol>
                 </div>
             </div>
@@ -41,8 +41,8 @@ $setting = App\Models\Setting::where('id',1)->first();
                                                 </td>
                                                 <td class="w-50">
                                                     <div class="invoice-top-right">
-                                                        <h4>Invoice</h4>
-                                                        <h5>Invoice No: {{ $invoice_no }}</h5>
+                                                        <h4>Booking Confirmation</h4>
+                                                        <h5>Reference No: {{ $invoice_no }}</h5>
                                                         <h5>Date: {{ $booking->created_at->format('M. j, Y') }}</h5>
                                                     </div>
                                                 </td>
@@ -62,7 +62,7 @@ $setting = App\Models\Setting::where('id',1)->first();
                                             <tr>
                                                 <td class="w-50">
                                                     <div class="invoice-middle-left">
-                                                        <h4>Invoice To:</h4>
+                                                        <h4>Prepared for:</h4>
                                                         <p class="mb_0">{{ Auth::guard('web')->user()->name }}</p>
                                                         <p class="mb_0">{{ Auth::guard('web')->user()->email }}</p>
                                                         <p class="mb_0">{{ Auth::guard('web')->user()->phone }}</p>
@@ -72,7 +72,7 @@ $setting = App\Models\Setting::where('id',1)->first();
                                                 </td>
                                                 <td class="w-50">
                                                     <div class="invoice-middle-right">
-                                                        <h4>Invoice From:</h4>
+                                                        <h4>Issued by:</h4>
                                                         <p class="mb_0">{{ env('APP_NAME') }}</p>
                                                         <p class="mb_0">{{ $admin_data->name }}</p>
                                                         <p class="mb_0 color_6d6d6d">{{ $admin_data->email }}</p>

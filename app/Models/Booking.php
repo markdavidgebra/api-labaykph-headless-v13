@@ -16,10 +16,20 @@ class Booking extends Model
         'total_person',
         'paid_amount',
         'payment_method',
+        'payment_proof',
         'payment_status',
         'invoice_no',
         'admin_viewed_at',
     ];
+
+    protected $appends = [
+        'payment_proof_url',
+    ];
+
+    public function getPaymentProofUrlAttribute(): ?string
+    {
+        return upload_url($this->payment_proof);
+    }
 
     public function tour()
     {

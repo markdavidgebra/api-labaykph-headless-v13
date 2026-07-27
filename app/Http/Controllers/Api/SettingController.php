@@ -16,7 +16,7 @@ class SettingController extends Controller
         }
 
         return response()->json([
-            'data' => with_upload_urls($setting, ['logo', 'favicon', 'banner']),
+            'data' => with_upload_urls($setting, ['logo', 'favicon', 'banner', 'payment_qr']),
         ]);
     }
 }

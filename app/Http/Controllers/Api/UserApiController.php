@@ -29,9 +29,36 @@ class UserApiController extends Controller
     {
         $userId = $request->user()->id;
 
+        $completedQuery = Booking::where('user_id', $userId)->where('payment_status', 'Completed');
+        $pendingQuery = Booking::where('user_id', $userId)->where('payment_status', 'Pending');
+
+        $payments = Booking::with(['package', 'tour'])
+            ->where('user_id', $userId)
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(function (Booking $booking) {
+                return [
+                    'id' => $booking->id,
+                    'invoice_no' => $booking->invoice_no,
+                    'package_name' => $booking->package?->name,
+                    'package_slug' => $booking->package?->slug,
+                    'total_person' => $booking->total_person,
+                    'paid_amount' => $booking->paid_amount,
+                    'payment_method' => $booking->payment_method,
+                    'payment_status' => $booking->payment_status,
+                    'payment_proof' => $booking->payment_proof,
+                    'payment_proof_url' => $booking->payment_proof_url,
+                    'created_at' => $booking->created_at,
+                ];
+            });
+
         return response()->json([
-            'total_completed_orders' => Booking::where('user_id', $userId)->where('payment_status', 'Completed')->count(),
-            'total_pending_orders' => Booking::where('user_id', $userId)->where('payment_status', 'Pending')->count(),
+            'total_completed_orders' => (clone $completedQuery)->count(),
+            'total_pending_orders' => (clone $pendingQuery)->count(),
+            'total_completed_amount' => (float) (clone $completedQuery)->sum('paid_amount'),
+            'total_pending_amount' => (float) (clone $pendingQuery)->sum('paid_amount'),
+            'total_paid_amount' => (float) Booking::where('user_id', $userId)->sum('paid_amount'),
+            'payments' => $payments,
         ]);
     }
 
@@ -261,8 +288,19 @@ class UserApiController extends Controller
             'package_id' => 'required',
             'total_person' => 'required|integer|min:1',
             'ticket_price' => 'required|numeric',
-            'payment_method' => 'required|in:Cash',
+            'payment_method' => 'required|in:QR Code,Cash',
+            'payment_proof' => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
+        ], [
+            'payment_proof.required' => 'Please upload a screenshot of your payment confirmation.',
+            'payment_proof.image' => 'Payment proof must be an image file.',
+            'payment_proof.max' => 'Payment proof must be 5MB or smaller.',
         ]);
+
+        $proofName = null;
+        if ($request->hasFile('payment_proof')) {
+            $proofName = 'payment_proof_'.time().'.'.$request->file('payment_proof')->extension();
+            $request->file('payment_proof')->move(public_path('uploads'), $proofName);
+        }
 
         $booking = Booking::create([
             'tour_id' => $request->tour_id,
@@ -270,14 +308,17 @@ class UserApiController extends Controller
             'user_id' => $request->user()->id,
             'total_person' => $request->total_person,
             'paid_amount' => $request->ticket_price,
-            'payment_method' => 'Cash',
+            'payment_method' => $request->payment_method,
+            'payment_proof' => $proofName,
             'payment_status' => 'Pending',
             'invoice_no' => time(),
         ]);
 
+        $amount = number_format((float) $booking->paid_amount, 0, '.', ',');
+
         return response()->json([
             'success' => true,
-            'message' => 'Thank you for booking. Sales person will contact you soon!',
+            'message' => "Thank you for booking. We received your ₱{$amount} payment screenshot. Our sales team will verify and contact you soon! For fast approval, contact this number: 0917-138-0150.",
             'booking' => $booking,
         ]);
     }

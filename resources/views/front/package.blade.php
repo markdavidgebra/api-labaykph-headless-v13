@@ -240,9 +240,7 @@
                                                         <div class="form-group mb-3">
                                                             <label class="form-label">Payment Method</label>
                                                             <select name="payment_method" class="form-select elegant-select" @if($i == 0) disabled @endif required>
-                                                                {{-- <option value="PayPal">PayPal</option>
-                                                                <option value="Stripe">Stripe</option> --}}
-                                                                <option value="Cash">Cash</option>
+                                                                <option value="QR Code">QR Code</option>
                                                             </select>
                                                         </div>
                                                         <div class="form-group">

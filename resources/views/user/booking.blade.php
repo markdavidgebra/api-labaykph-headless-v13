@@ -65,7 +65,7 @@ $setting = App\Models\Setting::where('id',1)->first();
                                 </td>
                                 <td>
                                     <a href="" class="btn btn-secondary btn-sm mb-1 w-100-p" data-bs-toggle="modal" data-bs-target="#exampleModal{{ $loop->iteration }}">Detail</a>
-                                    {{-- <a href="{{ route('user_invoice',$item->invoice_no) }}" class="btn btn-secondary btn-sm w-100-p">Invoice</a> --}}
+                                    {{-- <a href="{{ route('user_invoice',$item->invoice_no) }}" class="btn btn-secondary btn-sm w-100-p">Booking</a> --}}
                                 </td>
                             </tr>
                             <!-- Modal -->

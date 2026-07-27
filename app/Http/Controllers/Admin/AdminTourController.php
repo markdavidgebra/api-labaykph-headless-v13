@@ -9,6 +9,10 @@ use App\Models\Tour;
 use App\Models\Package;
 use App\Models\Booking;
 use App\Models\Setting;
+use App\Mail\Websitemail;
+use App\Support\MailContent;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class AdminTourController extends Controller
 {
@@ -147,7 +151,30 @@ class AdminTourController extends Controller
 
     public function tour_booking_approve($id)
     {
-        Booking::where('id',$id)->update(['payment_status'=>'Completed']);
-        return redirect()->back()->with('success','Booking is Approved Successfully');
+        $booking = Booking::with(['user', 'package'])->findOrFail($id);
+        $booking->update(['payment_status' => 'Completed']);
+
+        $user = $booking->user;
+        if ($user?->email) {
+            try {
+                $bookingUrl = frontend_url('user/booking/'.$booking->invoice_no);
+                $subject = 'Payment approved — '.config('app.name');
+                $message = MailContent::paymentApproved(
+                    $user->name ?? '',
+                    $booking->package?->name ?? 'your package',
+                    (string) $booking->invoice_no,
+                    (float) $booking->paid_amount,
+                    $bookingUrl
+                );
+                Mail::to($user->email)->send(new Websitemail($subject, $message));
+            } catch (\Throwable $e) {
+                Log::warning('Failed to send payment approval email', [
+                    'booking_id' => $booking->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return redirect()->back()->with('success', 'Booking approved. Client has been notified by email.');
     }
 }
