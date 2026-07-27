@@ -85,6 +85,7 @@ class FrontController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone ?: null,
+            'type' => 'general',
             'message' => $request->comment,
         ]);
 
@@ -116,6 +117,7 @@ class FrontController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
+            'type' => 'general',
             'message' => $request->message,
         ]);
 

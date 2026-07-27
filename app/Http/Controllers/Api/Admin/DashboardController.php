@@ -85,7 +85,14 @@ class DashboardController extends Controller
 
     public function markInquiryViewed()
     {
-        Inquiry::whereNull('admin_viewed_at')->update(['admin_viewed_at' => now()]);
+        Inquiry::where('type', 'general')->whereNull('admin_viewed_at')->update(['admin_viewed_at' => now()]);
+
+        return response()->json(['success' => true]);
+    }
+
+    public function markVipViewed()
+    {
+        Inquiry::where('type', 'vip')->whereNull('admin_viewed_at')->update(['admin_viewed_at' => now()]);
 
         return response()->json(['success' => true]);
     }
@@ -115,7 +122,8 @@ class DashboardController extends Controller
             })->count(),
             'unviewed_messages' => $unviewedMessages,
             'unviewed_subscribers' => Subscriber::whereNull('admin_viewed_at')->count(),
-            'unviewed_inquiries' => Inquiry::whereNull('admin_viewed_at')->count(),
+            'unviewed_inquiries' => Inquiry::where('type', 'general')->whereNull('admin_viewed_at')->count(),
+            'unviewed_vip' => Inquiry::where('type', 'vip')->whereNull('admin_viewed_at')->count(),
             'pending_payments' => Booking::where('payment_status', 'Pending')->count(),
         ];
     }

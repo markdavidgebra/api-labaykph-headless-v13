@@ -4,6 +4,17 @@ namespace App\Support;
 
 class MailContent
 {
+    public static function greeting(string $name = ''): string
+    {
+        $salam = 'Asalamu Alikom';
+
+        if ($name !== '') {
+            return $salam.',<br>'.e($name).',';
+        }
+
+        return $salam.',';
+    }
+
     public static function button(string $url, string $label): string
     {
         $safeUrl = e($url);
@@ -37,7 +48,7 @@ class MailContent
         return '
             <p style="margin: 0 0 8px 0; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: #9e7102; font-weight: 700;">Email verification</p>
             <p style="margin: 0 0 18px 0; font-size: 22px; line-height: 1.35; color: #2a241c; font-family: Georgia, \'Times New Roman\', Times, serif;">
-                Hello '.e($name).',
+                '.self::greeting($name).'
             </p>
             <p style="margin: 0 0 12px 0; color: #4a4338;">
                 Thank you for joining <strong>'.e(config('app.name')).'</strong>. Please confirm your email address to activate your account and start exploring our destinations and packages.
@@ -55,12 +66,10 @@ class MailContent
 
     public static function passwordReset(string $name, string $url): string
     {
-        $greeting = $name !== '' ? 'Hello '.e($name).',' : 'Hello,';
-
         return '
             <p style="margin: 0 0 8px 0; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: #9e7102; font-weight: 700;">Password reset</p>
             <p style="margin: 0 0 18px 0; font-size: 22px; line-height: 1.35; color: #2a241c; font-family: Georgia, \'Times New Roman\', Times, serif;">
-                '.$greeting.'
+                '.self::greeting($name).'
             </p>
             <p style="margin: 0 0 12px 0; color: #4a4338;">
                 We received a request to reset the password for your <strong>'.e(config('app.name')).'</strong> account.
@@ -83,13 +92,12 @@ class MailContent
         float $amount,
         string $bookingUrl
     ): string {
-        $greeting = $name !== '' ? 'Hello '.e($name).',' : 'Hello,';
         $amountLabel = '₱'.number_format($amount, 0, '.', ',');
 
         return '
             <p style="margin: 0 0 8px 0; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: #9e7102; font-weight: 700;">Payment approved</p>
             <p style="margin: 0 0 18px 0; font-size: 22px; line-height: 1.35; color: #2a241c; font-family: Georgia, \'Times New Roman\', Times, serif;">
-                '.$greeting.'
+                '.self::greeting($name).'
             </p>
             <p style="margin: 0 0 12px 0; color: #4a4338;">
                 Great news — your payment has been <strong>approved</strong> by our team.
@@ -112,6 +120,48 @@ class MailContent
             <p style="margin: 28px 0 0 0; color: #4a4338;">
                 Thank you for choosing <strong>'.e(config('app.name')).'</strong>. We look forward to your journey.
             </p>
+        ';
+    }
+
+    public static function vipRequest(string $name, string $email, string $phone, array $data): string
+    {
+        $rows = [
+            'Airlines' => $data['airlines'] ?? '',
+            'Flight class' => $data['flight_class'] ?? '',
+            'Date of travel' => $data['date_of_travel'] ?? '',
+            'Date of return' => $data['date_of_return'] ?? '',
+            'Hotel in Madinah' => $data['hotel_madinah'] ?? '',
+            'Hotel in Makkah' => $data['hotel_makkah'] ?? '',
+            'Land Arrangement' => $data['land_arrangement'] ?? '',
+            'Assistance' => $data['assistance_type'] ?? '',
+            'Land transportation' => $data['land_transportation'] ?? '',
+            'Other recommendation' => ($data['other_recommendation'] ?? '') !== '' ? $data['other_recommendation'] : '—',
+            'Number of pax' => (string) ($data['pax'] ?? ''),
+        ];
+
+        $details = '';
+        foreach ($rows as $label => $value) {
+            $details .= '<div style="margin: 0 0 8px 0;"><strong>'.e($label).':</strong> '.e((string) $value).'</div>';
+        }
+
+        return '
+            <p style="margin: 0 0 8px 0; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: #9e7102; font-weight: 700;">VIP travel request</p>
+            <p style="margin: 0 0 18px 0; font-size: 22px; line-height: 1.35; color: #2a241c; font-family: Georgia, \'Times New Roman\', Times, serif;">
+                '.self::greeting('Admin').'
+            </p>
+            <p style="margin: 0 0 12px 0; color: #4a4338;">
+                A logged-in client submitted a VIP travel request.
+            </p>
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 0 0 18px 0; background-color: #faf7f0; border: 1px solid #eee4d2; border-radius: 10px;">
+                <tr>
+                    <td style="padding: 16px 18px; font-family: Arial, Helvetica, sans-serif; color: #4a4338; font-size: 14px; line-height: 1.65;">
+                        <div style="margin: 0 0 8px 0;"><strong>Client:</strong> '.e($name).'</div>
+                        <div style="margin: 0 0 8px 0;"><strong>Email:</strong> '.e($email).'</div>
+                        <div style="margin: 0 0 12px 0;"><strong>Phone:</strong> '.e($phone !== '' ? $phone : '—').'</div>
+                        '.$details.'
+                    </td>
+                </tr>
+            </table>
         ';
     }
 }

@@ -103,6 +103,10 @@ class ResourceController extends Controller
         if ($resource === 'reviews') {
             Review::whereNull('admin_viewed_at')->update(['admin_viewed_at' => now()]);
         }
+        if ($resource === 'inquiries') {
+            $type = $request->query('type', 'general');
+            $query->where('type', $type === 'vip' ? 'vip' : 'general');
+        }
 
         if ($resource === 'packages' && $request->query('sort') === 'name') {
             $query->orderBy('name');

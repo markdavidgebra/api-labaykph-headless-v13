@@ -6,13 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Mail\Websitemail;
 use App\Models\Admin;
 use App\Models\Booking;
+use App\Models\Inquiry;
 use App\Models\Message;
 use App\Models\MessageComment;
 use App\Models\Review;
+use App\Models\Setting;
 use App\Models\Wishlist;
+use App\Support\MailContent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rule;
 
 class UserApiController extends Controller
 {
@@ -320,6 +326,78 @@ class UserApiController extends Controller
             'success' => true,
             'message' => "Thank you for booking. We received your ₱{$amount} payment screenshot. Our sales team will verify and contact you soon! For fast approval, contact this number: 0917-138-0150.",
             'booking' => $booking,
+        ]);
+    }
+
+    public function vipRequest(Request $request)
+    {
+        $data = $request->validate([
+            'airlines' => 'required|string|max:255',
+            'flight_class' => ['required', Rule::in(['Economy', 'Business'])],
+            'date_of_travel' => 'required|date',
+            'date_of_return' => 'required|date|after_or_equal:date_of_travel',
+            'hotel_madinah' => 'required|string|max:255',
+            'hotel_makkah' => 'required|string|max:255',
+            'land_arrangement' => 'required|string|max:500',
+            'assistance_type' => ['required', Rule::in(['Shaikh assistance', 'Company assistance'])],
+            'land_transportation' => 'required|string|max:255',
+            'other_recommendation' => 'nullable|string|max:2000',
+            'pax' => 'required|integer|min:1|max:100',
+        ]);
+
+        $user = $request->user();
+
+        $lines = [
+            'VIP Travel Request',
+            'Airlines: '.$data['airlines'],
+            'Flight class: '.$data['flight_class'],
+            'Date of travel: '.$data['date_of_travel'],
+            'Date of return: '.$data['date_of_return'],
+            'Hotel in Madinah: '.$data['hotel_madinah'],
+            'Hotel in Makkah: '.$data['hotel_makkah'],
+            'Land Arrangement: '.$data['land_arrangement'],
+            'Assistance: '.$data['assistance_type'],
+            'Land transportation: '.$data['land_transportation'],
+            'Other recommendation: '.($data['other_recommendation'] ?: '—'),
+            'Number of pax: '.$data['pax'],
+        ];
+        $plainMessage = implode("\n", $lines);
+
+        Inquiry::create([
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone ?: null,
+            'type' => 'vip',
+            'message' => $plainMessage,
+            'admin_viewed_at' => null,
+        ]);
+
+        $admin = Admin::where('id', 1)->first();
+        $setting = Setting::where('id', 1)->first();
+        $toEmail = $admin?->email
+            ?: ($setting?->top_bar_email ?: config('mail.from.address'));
+
+        if ($toEmail) {
+            try {
+                $subject = 'VIP Travel Request — '.config('app.name');
+                $body = MailContent::vipRequest(
+                    $user->name ?? '',
+                    $user->email ?? '',
+                    $user->phone ?? '',
+                    $data
+                );
+                Mail::to($toEmail)->send(new Websitemail($subject, $body));
+            } catch (\Throwable $e) {
+                Log::warning('Failed to send VIP request email', [
+                    'user_id' => $user->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Asalamu Alikom. Your VIP request was submitted. Our team will contact you soon.',
         ]);
     }
 }

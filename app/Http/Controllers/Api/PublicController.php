@@ -67,6 +67,7 @@ class PublicController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone ?: null,
+            'type' => 'general',
             'message' => $request->comment,
         ]);
 
@@ -99,6 +100,7 @@ class PublicController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
+            'type' => 'general',
             'message' => $request->message,
         ]);
 

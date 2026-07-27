@@ -61,6 +61,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/user/messages/poll', [UserApiController::class, 'messagePoll']);
         Route::get('/user/messages/count', [UserApiController::class, 'messageNotificationCount']);
         Route::post('/user/bookings', [UserApiController::class, 'bookingPayment']);
+        Route::post('/user/vip-request', [UserApiController::class, 'vipRequest']);
     });
 
     Route::prefix('admin')->group(function () {
@@ -77,6 +78,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/notifications/users/viewed', [AdminDashboardController::class, 'markUserViewed']);
             Route::post('/notifications/reviews/viewed', [AdminDashboardController::class, 'markReviewViewed']);
             Route::post('/notifications/inquiries/viewed', [AdminDashboardController::class, 'markInquiryViewed']);
+            Route::post('/notifications/vip/viewed', [AdminDashboardController::class, 'markVipViewed']);
 
             Route::get('/bookings', [AdminResourceController::class, 'bookings']);
             Route::get('/messages', [AdminResourceController::class, 'messages']);

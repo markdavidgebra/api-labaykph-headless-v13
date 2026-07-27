@@ -101,8 +101,8 @@ if (!function_exists('with_upload_urls')) {
 
 if (!function_exists('frontend_base_url')) {
     /**
-     * Public website base URL for email links (never api.labaykph.com).
-     * Production always uses https://labaykph.com. Local may use FRONTEND_URL.
+     * Public website base URL for email links (never api.labaykph.com / localhost).
+     * Always prefers https://labaykph.com so customers never receive local/dev URLs.
      */
     function frontend_base_url(): string
     {
@@ -110,9 +110,13 @@ if (!function_exists('frontend_base_url')) {
 
         if (function_exists('app') && app()->environment('local', 'testing')) {
             $local = trim((string) (config('app.frontend_url') ?: env('FRONTEND_URL') ?: ''));
-            $host = is_string($local) ? (parse_url($local, PHP_URL_HOST) ?: '') : '';
+            $host = is_string($local) ? strtolower((string) (parse_url($local, PHP_URL_HOST) ?: '')) : '';
 
-            if ($local !== '' && $host !== '' && !preg_match('/^api\./i', $host)) {
+            $isLoopback = $host === '' || in_array($host, ['localhost', '127.0.0.1', '::1'], true);
+            $isApiHost = $host !== '' && (bool) preg_match('/^api\./i', $host);
+
+            // Allow staging hosts (e.g. test.labaykph.com), never localhost/API.
+            if ($local !== '' && ! $isLoopback && ! $isApiHost) {
                 return rtrim($local, '/');
             }
         }
