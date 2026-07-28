@@ -38,6 +38,7 @@ use App\Models\User;
 use App\Models\WelcomeItem;
 use App\Models\SuperAdmin;
 use App\Models\Wishlist;
+use App\Support\AdminAccess;
 use App\Mail\Websitemail;
 use App\Support\MailContent;
 use Illuminate\Http\Request;
@@ -68,6 +69,8 @@ class ResourceController extends Controller
 
     public function index(Request $request, string $resource)
     {
+        AdminAccess::denyUnless(AdminAccess::canResource($request->user(), $resource, 'index'));
+
         $model = $this->resolveModel($resource);
         $query = $model::query();
 
@@ -135,6 +138,8 @@ class ResourceController extends Controller
 
     public function show(string $resource, int $id)
     {
+        AdminAccess::denyUnless(AdminAccess::canResource(request()->user(), $resource, 'show'));
+
         $model = $this->resolveModel($resource);
         $item = $model::findOrFail($id);
 
@@ -178,6 +183,8 @@ class ResourceController extends Controller
 
     public function store(Request $request, string $resource)
     {
+        AdminAccess::denyUnless(AdminAccess::canResource($request->user(), $resource, 'store'));
+
         $model = $this->resolveModel($resource);
         $data = $this->prepareData($request, $resource);
         $item = $model::create($data);
@@ -187,6 +194,8 @@ class ResourceController extends Controller
 
     public function update(Request $request, string $resource, int $id)
     {
+        AdminAccess::denyUnless(AdminAccess::canResource($request->user(), $resource, 'update'));
+
         $model = $this->resolveModel($resource);
         $item = $model::findOrFail($id);
         $data = $this->prepareData($request, $resource, $item);
@@ -197,6 +206,8 @@ class ResourceController extends Controller
 
     public function destroy(string $resource, int $id)
     {
+        AdminAccess::denyUnless(AdminAccess::canResource(request()->user(), $resource, 'destroy'));
+
         if ($resource === 'tours') {
             $bookingCount = Booking::where('tour_id', $id)->count();
             if ($bookingCount > 0) {
@@ -251,6 +262,7 @@ class ResourceController extends Controller
 
     public function approveReview(int $id)
     {
+        AdminAccess::denyUnless(! AdminAccess::isStaff(request()->user()));
         $review = Review::findOrFail($id);
         $review->status = 'Approved';
         $review->save();
@@ -268,6 +280,7 @@ class ResourceController extends Controller
 
     public function rejectReview(int $id)
     {
+        AdminAccess::denyUnless(! AdminAccess::isStaff(request()->user()));
         Review::findOrFail($id)->update(['status' => 'Rejected']);
 
         return response()->json(['success' => true]);
@@ -326,6 +339,7 @@ class ResourceController extends Controller
 
     public function storeDestinationPhoto(Request $request, int $id)
     {
+        AdminAccess::denyUnless(! AdminAccess::isStaff($request->user()));
         Destination::findOrFail($id);
         $request->validate([
             'photo' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
@@ -344,6 +358,8 @@ class ResourceController extends Controller
 
     public function destroyDestinationPhoto(int $id, int $photoId)
     {
+        AdminAccess::denyUnless(! AdminAccess::isStaff(request()->user()));
+
         $photo = DestinationPhoto::where('destination_id', $id)->where('id', $photoId)->firstOrFail();
         $photoPath = public_path('uploads/'.$photo->photo);
         if ($photo->photo && file_exists($photoPath)) {
@@ -356,6 +372,8 @@ class ResourceController extends Controller
 
     public function storeDestinationVideo(Request $request, int $id)
     {
+        AdminAccess::denyUnless(! AdminAccess::isStaff(request()->user()));
+
         Destination::findOrFail($id);
         $request->validate(['video' => 'required|string']);
 
@@ -374,6 +392,8 @@ class ResourceController extends Controller
 
     public function destroyDestinationVideo(int $id, int $videoId)
     {
+        AdminAccess::denyUnless(! AdminAccess::isStaff(request()->user()));
+
         DestinationVideo::where('destination_id', $id)->where('id', $videoId)->firstOrFail()->delete();
 
         return response()->json(['success' => true]);
@@ -381,6 +401,8 @@ class ResourceController extends Controller
 
     public function storePackagePhoto(Request $request, int $id)
     {
+        AdminAccess::denyUnless(! AdminAccess::isStaff(request()->user()));
+
         Package::findOrFail($id);
         $request->validate([
             'photo' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
@@ -399,6 +421,8 @@ class ResourceController extends Controller
 
     public function destroyPackagePhoto(int $id, int $photoId)
     {
+        AdminAccess::denyUnless(! AdminAccess::isStaff(request()->user()));
+
         $photo = PackagePhoto::where('package_id', $id)->where('id', $photoId)->firstOrFail();
         $photoPath = public_path('uploads/'.$photo->photo);
         if ($photo->photo && file_exists($photoPath)) {
@@ -411,6 +435,8 @@ class ResourceController extends Controller
 
     public function storePackageVideo(Request $request, int $id)
     {
+        AdminAccess::denyUnless(! AdminAccess::isStaff(request()->user()));
+
         Package::findOrFail($id);
         $request->validate(['video' => 'required|string']);
 
@@ -429,6 +455,8 @@ class ResourceController extends Controller
 
     public function destroyPackageVideo(int $id, int $videoId)
     {
+        AdminAccess::denyUnless(! AdminAccess::isStaff(request()->user()));
+
         PackageVideo::where('package_id', $id)->where('id', $videoId)->firstOrFail()->delete();
 
         return response()->json(['success' => true]);
@@ -436,6 +464,8 @@ class ResourceController extends Controller
 
     public function storePackageAmenity(Request $request, int $id)
     {
+        AdminAccess::denyUnless(! AdminAccess::isStaff(request()->user()));
+
         Package::findOrFail($id);
         $request->validate([
             'amenity_id' => 'required|integer|exists:amenities,id',
@@ -461,6 +491,8 @@ class ResourceController extends Controller
 
     public function destroyPackageAmenity(int $id, int $amenityId)
     {
+        AdminAccess::denyUnless(! AdminAccess::isStaff(request()->user()));
+
         PackageAmenity::where('package_id', $id)->where('id', $amenityId)->firstOrFail()->delete();
 
         return response()->json(['success' => true]);
@@ -468,6 +500,8 @@ class ResourceController extends Controller
 
     public function storePackageItinerary(Request $request, int $id)
     {
+        AdminAccess::denyUnless(! AdminAccess::isStaff(request()->user()));
+
         Package::findOrFail($id);
         $request->validate([
             'name' => 'required|string',
@@ -485,6 +519,8 @@ class ResourceController extends Controller
 
     public function destroyPackageItinerary(int $id, int $itineraryId)
     {
+        AdminAccess::denyUnless(! AdminAccess::isStaff(request()->user()));
+
         PackageItinerary::where('package_id', $id)->where('id', $itineraryId)->firstOrFail()->delete();
 
         return response()->json(['success' => true]);
@@ -492,6 +528,8 @@ class ResourceController extends Controller
 
     public function storePackageFaq(Request $request, int $id)
     {
+        AdminAccess::denyUnless(! AdminAccess::isStaff(request()->user()));
+
         Package::findOrFail($id);
         $request->validate([
             'question' => 'required|string',
@@ -509,6 +547,8 @@ class ResourceController extends Controller
 
     public function destroyPackageFaq(int $id, int $faqId)
     {
+        AdminAccess::denyUnless(! AdminAccess::isStaff(request()->user()));
+
         PackageFaq::where('package_id', $id)->where('id', $faqId)->firstOrFail()->delete();
 
         return response()->json(['success' => true]);
@@ -534,6 +574,8 @@ class ResourceController extends Controller
 
     public function destroyTourBooking(int $bookingId)
     {
+        AdminAccess::denyUnless(! AdminAccess::isStaff(request()->user()));
+
         Booking::findOrFail($bookingId)->delete();
 
         return response()->json(['success' => true]);
@@ -541,6 +583,8 @@ class ResourceController extends Controller
 
     public function approveTourBooking(int $bookingId)
     {
+        AdminAccess::denyUnless(AdminAccess::canApprovePayments(request()->user()));
+
         $booking = Booking::with(['user', 'package', 'tour'])->findOrFail($bookingId);
         $booking->update(['payment_status' => 'Completed']);
 
@@ -655,6 +699,8 @@ class ResourceController extends Controller
 
     public function messageThreadForUser(int $userId)
     {
+        AdminAccess::denyUnless(AdminAccess::canResource(request()->user(), 'messages', 'show'));
+
         $message = Message::where('user_id', $userId)->first();
         if (!$message) {
             $message = Message::create(['user_id' => $userId]);
@@ -670,6 +716,7 @@ class ResourceController extends Controller
 
     public function storeContactOffice(Request $request)
     {
+        AdminAccess::denyUnless(! AdminAccess::isStaff($request->user()));
         $request->validate([
             'name' => ['required', 'max:255'],
         ]);
@@ -688,6 +735,7 @@ class ResourceController extends Controller
 
     public function updateContactOffice(Request $request, int $id)
     {
+        AdminAccess::denyUnless(! AdminAccess::isStaff($request->user()));
         $request->validate([
             'name' => ['required', 'max:255'],
         ]);
@@ -706,6 +754,7 @@ class ResourceController extends Controller
 
     public function destroyContactOffice(int $id)
     {
+        AdminAccess::denyUnless(! AdminAccess::isStaff(request()->user()));
         ContactOffice::findOrFail($id)->delete();
 
         return response()->json(['success' => true]);
@@ -713,6 +762,8 @@ class ResourceController extends Controller
 
     public function singleton(string $key)
     {
+        AdminAccess::denyUnless(! AdminAccess::isStaff(request()->user()));
+
         $map = [
             'welcome' => WelcomeItem::class,
             'counter' => CounterItem::class,
@@ -742,6 +793,7 @@ class ResourceController extends Controller
 
     public function updateSingleton(Request $request, string $key)
     {
+        AdminAccess::denyUnless(! AdminAccess::isStaff($request->user()));
         $map = [
             'welcome' => WelcomeItem::class,
             'counter' => CounterItem::class,

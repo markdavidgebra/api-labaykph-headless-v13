@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\SuperAdmin;
+use App\Support\AdminAccess;
 use Hash;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -24,17 +25,18 @@ class AuthController extends Controller
 
             return response()->json([
                 'token' => $token,
-                'user' => $this->formatAdmin($superAdmin, 'superadmin'),
+                'user' => $this->formatAdmin($superAdmin),
             ]);
         }
 
         $admin = Admin::where('email', $request->email)->first();
         if ($admin && Hash::check($request->password, $admin->password)) {
-            $token = $admin->createToken('admin-token', ['admin'])->plainTextToken;
+            $role = AdminAccess::role($admin);
+            $token = $admin->createToken('admin-token', [$role])->plainTextToken;
 
             return response()->json([
                 'token' => $token,
-                'user' => $this->formatAdmin($admin, 'admin'),
+                'user' => $this->formatAdmin($admin),
             ]);
         }
 
@@ -52,10 +54,7 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        $user = $request->user();
-        $role = $user instanceof SuperAdmin ? 'superadmin' : 'admin';
-
-        return response()->json(['user' => $this->formatAdmin($user, $role)]);
+        return response()->json(['user' => $this->formatAdmin($request->user())]);
     }
 
     public function updateProfile(Request $request)
@@ -85,15 +84,14 @@ class AuthController extends Controller
         }
 
         $user->save();
-        $role = $user instanceof SuperAdmin ? 'superadmin' : 'admin';
 
-        return response()->json(['success' => true, 'user' => $this->formatAdmin($user, $role)]);
+        return response()->json(['success' => true, 'user' => $this->formatAdmin($user)]);
     }
 
-    private function formatAdmin($user, string $role): array
+    private function formatAdmin($user): array
     {
         $data = with_upload_urls($user, ['photo']);
-        $data['role'] = $role;
+        $data['role'] = AdminAccess::role($user);
 
         return $data;
     }

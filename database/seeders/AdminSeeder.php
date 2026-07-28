@@ -14,12 +14,26 @@ class AdminSeeder extends Seeder
      */
     public function run(): void
     {
-        $obj = new Admin;
-        $obj->name = "Morshedul Arefin";
-        $obj->email = "admin@labaykph.com";
-        $obj->photo = "admin.jpg";
-        $obj->password = Hash::make('password');
-        $obj->token = "";
-        $obj->save();
+        Admin::updateOrCreate(
+            ['email' => 'admin@labaykph.com'],
+            [
+                'name' => 'Morshedul Arefin',
+                'role' => 'admin',
+                'photo' => 'admin.jpg',
+                'password' => Hash::make('password'),
+                'token' => '',
+            ]
+        );
+
+        Admin::updateOrCreate(
+            ['email' => 'staff@labaykph.com'],
+            [
+                'name' => 'Staff Admin',
+                'role' => 'staff',
+                'photo' => 'admin.jpg',
+                'password' => Hash::make('password'),
+                'token' => '',
+            ]
+        );
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Mail\Websitemail;
 use App\Models\Subscriber;
+use App\Support\AdminAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -20,6 +21,8 @@ class SubscriberController extends Controller
 
     public function sendEmail(Request $request)
     {
+        AdminAccess::denyUnless(AdminAccess::canManageSubscribers($request->user()));
+
         $request->validate([
             'subject' => 'required|string|max:255',
             'message' => 'required|string',
@@ -99,6 +102,8 @@ class SubscriberController extends Controller
 
     public function bulkDelete(Request $request)
     {
+        AdminAccess::denyUnless(AdminAccess::canManageSubscribers($request->user()));
+
         $request->validate([
             'ids' => 'required|array|min:1',
             'ids.*' => 'integer|distinct',
