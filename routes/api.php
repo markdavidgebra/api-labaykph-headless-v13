@@ -117,6 +117,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/tour-invoices/{invoiceNo}', [AdminResourceController::class, 'tourInvoice']);
             Route::delete('/tour-bookings/{bookingId}', [AdminResourceController::class, 'destroyTourBooking']);
             Route::post('/tour-bookings/{bookingId}/approve', [AdminResourceController::class, 'approveTourBooking']);
+            Route::post('/tour-bookings/{bookingId}/disapprove', [AdminResourceController::class, 'disapproveTourBooking']);
 
             Route::get('/subscribers/active-count', [AdminSubscriberController::class, 'activeCount']);
             Route::post('/subscribers/send-email', [AdminSubscriberController::class, 'sendEmail']);

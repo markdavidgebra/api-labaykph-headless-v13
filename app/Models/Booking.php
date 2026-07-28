@@ -18,6 +18,7 @@ class Booking extends Model
         'payment_method',
         'payment_proof',
         'payment_status',
+        'payment_disapprove_reason',
         'invoice_no',
         'admin_viewed_at',
     ];

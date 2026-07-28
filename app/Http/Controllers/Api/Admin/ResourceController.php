@@ -605,7 +605,10 @@ class ResourceController extends Controller
         AdminAccess::denyUnless(AdminAccess::canApprovePayments(request()->user()));
 
         $booking = Booking::with(['user', 'package', 'tour'])->findOrFail($bookingId);
-        $booking->update(['payment_status' => 'Completed']);
+        $booking->update([
+            'payment_status' => 'Completed',
+            'payment_disapprove_reason' => null,
+        ]);
 
         $user = $booking->user;
         if ($user?->email) {
@@ -631,6 +634,50 @@ class ResourceController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Payment approved. Client has been notified by email.',
+        ]);
+    }
+
+    public function disapproveTourBooking(Request $request, int $bookingId)
+    {
+        AdminAccess::denyUnless(AdminAccess::canApprovePayments($request->user()));
+
+        $data = $request->validate([
+            'reason' => 'required|string|min:5|max:2000',
+        ]);
+
+        $booking = Booking::with(['user', 'package', 'tour'])->findOrFail($bookingId);
+        $reason = trim($data['reason']);
+
+        $booking->update([
+            'payment_status' => 'Disapproved',
+            'payment_disapprove_reason' => $reason,
+        ]);
+
+        $user = $booking->user;
+        if ($user?->email) {
+            try {
+                $bookingUrl = frontend_url('user/booking/'.$booking->invoice_no);
+                $subject = 'Payment not approved — '.config('app.name');
+                $message = MailContent::paymentDisapproved(
+                    $user->name ?? '',
+                    $booking->package?->name ?? 'your package',
+                    (string) $booking->invoice_no,
+                    (float) $booking->paid_amount,
+                    $reason,
+                    $bookingUrl
+                );
+                Mail::to($user->email)->send(new Websitemail($subject, $message));
+            } catch (\Throwable $e) {
+                Log::warning('Failed to send payment disapproval email', [
+                    'booking_id' => $booking->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment disapproved. Client has been notified by email.',
         ]);
     }
 
