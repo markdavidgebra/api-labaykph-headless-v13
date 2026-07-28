@@ -123,8 +123,46 @@ class DashboardController extends Controller
             'unviewed_messages' => $unviewedMessages,
             'unviewed_subscribers' => Subscriber::whereNull('admin_viewed_at')->count(),
             'unviewed_inquiries' => Inquiry::where('type', 'general')->whereNull('admin_viewed_at')->count(),
-            'unviewed_vip' => Inquiry::where('type', 'vip')->whereNull('admin_viewed_at')->count(),
+            'unviewed_vip' => $this->countUnviewedVip(),
             'pending_payments' => Booking::where('payment_status', 'Pending')->count(),
         ];
+    }
+
+    /**
+     * VIP sidebar badge: new VIP requests + VIP guests with unread chat replies.
+     */
+    private function countUnviewedVip(): int
+    {
+        $count = 0;
+        $vipInquiries = Inquiry::where('type', 'vip')->get(['id', 'email', 'admin_viewed_at']);
+        $seenMessageIds = [];
+
+        foreach ($vipInquiries as $inquiry) {
+            $needsAttention = is_null($inquiry->admin_viewed_at);
+
+            if (! $needsAttention && $inquiry->email) {
+                $user = User::where('email', $inquiry->email)->first(['id']);
+                if ($user) {
+                    $message = Message::where('user_id', $user->id)->first(['id', 'admin_viewed_at']);
+                    if ($message && ! isset($seenMessageIds[$message->id])) {
+                        $seenMessageIds[$message->id] = true;
+                        if (is_null($message->admin_viewed_at)) {
+                            $needsAttention = true;
+                        } else {
+                            $needsAttention = MessageComment::where('message_id', $message->id)
+                                ->where('type', 'User')
+                                ->where('created_at', '>', $message->admin_viewed_at)
+                                ->exists();
+                        }
+                    }
+                }
+            }
+
+            if ($needsAttention) {
+                $count++;
+            }
+        }
+
+        return $count;
     }
 }

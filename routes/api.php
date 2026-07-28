@@ -85,6 +85,8 @@ Route::prefix('v1')->group(function () {
             Route::get('/messages/{id}', function (int $id) {
                 return app(AdminResourceController::class)->show('messages', $id);
             });
+            Route::post('/messages/{id}/reply', [AdminResourceController::class, 'replyToMessage']);
+            Route::get('/vip/{id}/thread', [AdminResourceController::class, 'vipThread']);
 
             Route::post('/destinations/{id}/photos', [AdminResourceController::class, 'storeDestinationPhoto']);
             Route::delete('/destinations/{id}/photos/{photoId}', [AdminResourceController::class, 'destroyDestinationPhoto']);

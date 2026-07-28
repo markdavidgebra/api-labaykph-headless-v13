@@ -133,6 +133,17 @@ class ResourceController extends Controller
             });
         }
 
+        if ($resource === 'inquiries' && $request->query('type') === 'vip') {
+            $items->getCollection()->transform(function ($inquiry) {
+                $meta = $this->messageUnreadMetaForEmail($inquiry->email);
+                $inquiry->message_id = $meta['message_id'];
+                $inquiry->unread_count = $meta['unread_count'];
+                $inquiry->has_unread = $meta['has_unread'];
+
+                return $inquiry;
+            });
+        }
+
         return response()->json($items);
     }
 
@@ -255,7 +266,15 @@ class ResourceController extends Controller
 
     public function messages()
     {
-        $messages = Message::with('user')->orderBy('created_at', 'desc')->paginate(20);
+        $messages = Message::with('user')->orderBy('updated_at', 'desc')->paginate(20);
+
+        $messages->getCollection()->transform(function ($message) {
+            $meta = $this->messageUnreadMeta($message);
+            $message->unread_count = $meta['unread_count'];
+            $message->has_unread = $meta['has_unread'];
+
+            return $message;
+        });
 
         return response()->json($messages);
     }
@@ -709,6 +728,101 @@ class ResourceController extends Controller
         return response()->json(['message_id' => $message->id]);
     }
 
+    public function vipThread(int $id)
+    {
+        AdminAccess::denyUnless(AdminAccess::canReplyMessages(request()->user()));
+
+        $inquiry = Inquiry::where('id', $id)->where('type', 'vip')->firstOrFail();
+        $user = User::where('email', $inquiry->email)->first();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'No registered user found for this VIP request email.',
+                'message_id' => null,
+                'comments' => [],
+                'user' => null,
+            ], 422);
+        }
+
+        $message = Message::firstOrCreate(['user_id' => $user->id]);
+        Message::where('id', $message->id)->update(['admin_viewed_at' => now()]);
+
+        $comments = MessageComment::where('message_id', $message->id)
+            ->orderBy('id', 'desc')
+            ->get();
+
+        return response()->json([
+            'message_id' => $message->id,
+            'user' => $user,
+            'comments' => $comments,
+            'inquiry_id' => $inquiry->id,
+        ]);
+    }
+
+    public function replyToMessage(Request $request, int $id)
+    {
+        AdminAccess::denyUnless(AdminAccess::canReplyMessages($request->user()));
+
+        $request->validate([
+            'comment' => 'required|string|max:5000',
+        ]);
+
+        $message = Message::with('user')->findOrFail($id);
+        $adminUser = $request->user();
+
+        $comment = MessageComment::create([
+            'message_id' => $message->id,
+            'sender_id' => (int) ($adminUser->id ?? 1),
+            'type' => 'Admin',
+            'comment' => $request->comment,
+        ]);
+
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('typing_indicators')) {
+                \Illuminate\Support\Facades\DB::table('typing_indicators')
+                    ->where('message_id', $message->id)
+                    ->where('typer', 'admin')
+                    ->delete();
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+
+        Message::where('id', $message->id)->update([
+            'admin_viewed_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $userEmail = $message->user?->email;
+        if ($userEmail) {
+            try {
+                $link = frontend_url('user/messages');
+                $subject = 'New message from '.config('app.name');
+                $body = MailContent::greeting($message->user->name ?? '')
+                    .'<br><br>You have a new message from our team.'
+                    .MailContent::button($link, 'Open Messages')
+                    .MailContent::fallbackLink($link);
+                Mail::to($userEmail)->send(new Websitemail($subject, $body));
+            } catch (\Throwable $e) {
+                Log::warning('Failed to send admin reply email', [
+                    'message_id' => $message->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => [
+                'id' => $comment->id,
+                'comment' => $comment->comment,
+                'type' => $comment->type,
+                'created_at' => $comment->created_at,
+                'sender_name' => $adminUser->name ?? 'Admin',
+            ],
+        ]);
+    }
+
     public function showContactOffice(int $id)
     {
         return response()->json(['office' => ContactOffice::findOrFail($id)]);
@@ -945,6 +1059,48 @@ class ResourceController extends Controller
 
             $model->$field = $finalName;
         }
+    }
+
+    private function messageUnreadMeta(Message $message): array
+    {
+        if (is_null($message->admin_viewed_at)) {
+            $unread = MessageComment::where('message_id', $message->id)
+                ->where('type', 'User')
+                ->count();
+            if ($unread < 1) {
+                $unread = 1;
+            }
+        } else {
+            $unread = MessageComment::where('message_id', $message->id)
+                ->where('type', 'User')
+                ->where('created_at', '>', $message->admin_viewed_at)
+                ->count();
+        }
+
+        return [
+            'message_id' => $message->id,
+            'unread_count' => $unread,
+            'has_unread' => $unread > 0,
+        ];
+    }
+
+    private function messageUnreadMetaForEmail(?string $email): array
+    {
+        if (!$email) {
+            return ['message_id' => null, 'unread_count' => 0, 'has_unread' => false];
+        }
+
+        $user = User::where('email', $email)->first();
+        if (!$user) {
+            return ['message_id' => null, 'unread_count' => 0, 'has_unread' => false];
+        }
+
+        $message = Message::where('user_id', $user->id)->first();
+        if (!$message) {
+            return ['message_id' => null, 'unread_count' => 0, 'has_unread' => false];
+        }
+
+        return $this->messageUnreadMeta($message);
     }
 
     private function ensureSuperAdmin(Request $request): void

@@ -89,6 +89,15 @@ class AdminAccess
         ], true);
     }
 
+    public static function canReplyMessages(mixed $user): bool
+    {
+        return in_array(self::role($user), [
+            self::ROLE_SUPERADMIN,
+            self::ROLE_ADMIN,
+            self::ROLE_STAFF,
+        ], true);
+    }
+
     public static function canManageSubscribers(mixed $user): bool
     {
         return ! self::isStaff($user);
